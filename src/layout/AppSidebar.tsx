@@ -3,7 +3,7 @@ import React, {useEffect, useRef, useState, useCallback} from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {usePathname} from "next/navigation";
-import {useSidebar} from "../context/SidebarContext";
+import {useSidebar} from "@/context/SidebarContext";
 import {
     BoxCubeIcon,
     CalenderIcon,
@@ -74,7 +74,7 @@ const othersItems: NavItem[] = [
     {
         icon: <UserCircleIcon/>,
         name: "Consultórios",
-        path: "/profile",
+        path: "/consultorios",
     },
     {
         icon: <UserCircleIcon/>,
