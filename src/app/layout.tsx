@@ -3,6 +3,7 @@ import "./globals.css";
 
 import { SidebarProvider } from "@/context/SidebarContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { Toaster } from 'sonner';
 
 const outfit = Outfit({
   variable: "--font-outfit-sans",
@@ -20,6 +21,9 @@ export default function RootLayout({
         <ThemeProvider>
           <SidebarProvider>{children}</SidebarProvider>
         </ThemeProvider>
+        
+        // Inside your layout component
+        <Toaster />
       </body>
     </html>
   );
