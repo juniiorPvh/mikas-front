@@ -255,8 +255,8 @@ export default function ConsultorioForm({ consultorio, onSuccess }: ConsultorioF
                     </div>
                 </div>
 
-                <Button type="submit">
-                    {consultorio ? 'Atualizar' : 'Criar'} Consultório
+                <Button type="submit" variant={consultorio ? "primary" : "outline"}>
+                    {consultorio ? "Atualizar" : "Criar"} Consultório
                 </Button>
             </form>
         </Form>
