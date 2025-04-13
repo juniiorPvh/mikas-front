@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash } from "lucide-react";
 import { toast } from "sonner";
-import { Consultorio } from "../../types/consultorio";
+import { Consultorio } from "@/app/@types/consultorio";
 import ConsultorioForm from "./components/consultorio-form";
 import {
     Dialog,
@@ -19,6 +19,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { ConsultorioService } from "../../services/consultorio-service";
 
 export default function ConsultoriosList() {
     const [consultorios, setConsultorios] = useState<Consultorio[]>([]);
@@ -27,11 +28,10 @@ export default function ConsultoriosList() {
 
     const fetchConsultorios = async () => {
         try {
-            const response = await fetch('http://localhost:8080/consultorios');
-            const data = await response.json();
+            const data = await ConsultorioService.getAll();
             setConsultorios(data);
         } catch (error) {
-            toast.error("Failed to fetch consultórios");
+            toast.error("Falha ao carregar consultórios");
         }
     };
 
@@ -41,13 +41,11 @@ export default function ConsultoriosList() {
 
     const handleDelete = async (id: number) => {
         try {
-            await fetch(`http://localhost:8080/consultorios/${id}`, {
-                method: 'DELETE',
-            });
-            toast.success("Consultório deleted successfully");
+            await ConsultorioService.delete(id);
+            toast.success("Consultório excluído com sucesso");
             fetchConsultorios();
         } catch (error) {
-            toast.error("Failed to delete consultório");
+            toast.error("Falha ao excluir consultório");
         }
     };
 

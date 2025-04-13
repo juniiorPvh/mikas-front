@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Consultorio } from "../../../types/consultorio";
-import { ConsultorioService } from '../../../services/consultorio-service';
+import { Consultorio } from "@/app/@types/consultorio";
+import { ConsultorioService } from '@/services/consultorio-service';
 
 const consultorioSchema = z.object({
     nome: z.string().min(1, "Nome é obrigatório"),
