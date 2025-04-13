@@ -1,0 +1,370 @@
+'use client';
+
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import Button from "@/components/ui/button/Button";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { UsuarioService } from "../../../services/usuario-service";
+import { Consultorio } from "@/app/@types/consultorio";
+import { Usuario } from "@/app/@types/usuario";
+
+const usuarioSchema = z.object({
+    email: z.string().email("Email inválido"),
+    senha: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
+    papel: z.enum(['ADMIN', 'PROFISSIONAL', 'CLIENTE']),
+    pessoa: z.object({
+        nome: z.string().min(1, "Nome é obrigatório"),
+        cpfCnpj: z.string().min(1, "CPF/CNPJ é obrigatório"),
+        dataNascimento: z.string().min(1, "Data de nascimento é obrigatória"),
+        email: z.string().email("Email inválido"),
+        endereco: z.object({
+            rua: z.string().min(1, "Rua é obrigatória"),
+            numero: z.string().min(1, "Número é obrigatório"),
+            complemento: z.string().optional(),
+            bairro: z.string().min(1, "Bairro é obrigatório"),
+            cidade: z.string().min(1, "Cidade é obrigatória"),
+            estado: z.string().min(1, "Estado é obrigatório"),
+            cep: z.string().min(1, "CEP é obrigatório"),
+        }),
+        contato: z.object({
+            telefone: z.string().min(1, "Telefone é obrigatório"),
+            email: z.string().email("Email inválido"),
+            site: z.string().optional(),
+        }),
+    }),
+});
+
+interface UsuarioFormProps {
+    consultorio: Consultorio;
+    usuario?: Usuario;
+    onSuccess: () => void;
+}
+
+export default function UsuarioForm({ consultorio, usuario, onSuccess }: UsuarioFormProps) {
+    const form = useForm<z.infer<typeof usuarioSchema>>({
+        resolver: zodResolver(usuarioSchema),
+        defaultValues: usuario || {
+            email: "",
+            senha: "",
+            papel: "CLIENTE",
+            pessoa: {
+                nome: "",
+                cpfCnpj: "",
+                dataNascimento: "",
+                email: "",
+                endereco: {
+                    rua: "",
+                    numero: "",
+                    complemento: "",
+                    bairro: "",
+                    cidade: "",
+                    estado: "",
+                    cep: "",
+                },
+                contato: {
+                    telefone: "",
+                    email: "",
+                    site: "",
+                },
+            },
+        },
+    });
+
+    const onSubmit = async (data: z.infer<typeof usuarioSchema>) => {
+        try {
+            const userData = {
+                ...data,
+                consultorio,
+            };
+
+            if (usuario?.id) {
+                await UsuarioService.update(usuario.id, userData);
+                toast.success("Usuário atualizado com sucesso");
+            } else {
+                await UsuarioService.create(userData);
+                toast.success("Usuário criado com sucesso");
+            }
+            onSuccess();
+        } catch (error) {
+            toast.error("Falha ao salvar usuário");
+        }
+    };
+
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl>
+                                    <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="senha"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Senha</FormLabel>
+                                <FormControl>
+                                    <Input type="password" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="papel"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Papel</FormLabel>
+                                <Select 
+                                    onValueChange={field.onChange} 
+                                    defaultValue={field.value}
+                                >
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selecione um papel" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="ADMIN">Administrador</SelectItem>
+                                        <SelectItem value="PROFISSIONAL">Profissional</SelectItem>
+                                        <SelectItem value="CLIENTE">Cliente</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+                <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Dados Pessoais</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="pessoa.nome"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Nome</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="pessoa.cpfCnpj"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>CPF/CNPJ</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="pessoa.dataNascimento"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Data de Nascimento</FormLabel>
+                                    <FormControl>
+                                        <Input type="date" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="pessoa.email"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Email Pessoal</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+
+                    <h3 className="text-lg font-medium mt-6">Endereço</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="pessoa.endereco.rua"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Rua</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="pessoa.endereco.numero"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Número</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="pessoa.endereco.complemento"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Complemento</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="pessoa.endereco.bairro"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Bairro</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="pessoa.endereco.cidade"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Cidade</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="pessoa.endereco.estado"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Estado</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="pessoa.endereco.cep"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>CEP</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+
+                    <h3 className="text-lg font-medium mt-6">Contato</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="pessoa.contato.telefone"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Telefone</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="pessoa.contato.email"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Email de Contato</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="pessoa.contato.site"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Site</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                </div>
+
+                <Button type="submit">
+                    {usuario ? "Atualizar" : "Criar"} Usuário
+                </Button>
+            </form>
+        </Form>
+    );
+}

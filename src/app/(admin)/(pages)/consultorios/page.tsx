@@ -9,7 +9,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash } from "lucide-react";
+import { Plus, Pencil, Trash, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Consultorio } from "@/app/@types/consultorio";
 import ConsultorioForm from "./components/consultorio-form";
@@ -20,11 +20,14 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { ConsultorioService } from "../../services/consultorio-service";
+import UsuariosList from "./components/usuarios-list";
 
 export default function ConsultoriosList() {
     const [consultorios, setConsultorios] = useState<Consultorio[]>([]);
     const [open, setOpen] = useState(false);
     const [selectedConsultorio, setSelectedConsultorio] = useState<Consultorio | null>(null);
+    const [usuariosDialogOpen, setUsuariosDialogOpen] = useState(false);
+    const [selectedConsultorioForUsers, setSelectedConsultorioForUsers] = useState<Consultorio | null>(null);
 
     const fetchConsultorios = async () => {
         try {
@@ -83,6 +86,16 @@ export default function ConsultoriosList() {
                                     variant="outline"
                                     size="icon"
                                     onClick={() => {
+                                        setSelectedConsultorioForUsers(consultorio);
+                                        setUsuariosDialogOpen(true);
+                                    }}
+                                >
+                                    <Users className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => {
                                         setSelectedConsultorio(consultorio);
                                         setOpen(true);
                                     }}
@@ -116,6 +129,19 @@ export default function ConsultoriosList() {
                             fetchConsultorios();
                         }}
                     />
+                </DialogContent>
+            </Dialog>
+            <Dialog open={usuariosDialogOpen} onOpenChange={setUsuariosDialogOpen}>
+                <DialogContent className="max-w-4xl">
+                    <DialogHeader>
+                        <DialogTitle>Gerenciar Usuários</DialogTitle>
+                    </DialogHeader>
+                    {selectedConsultorioForUsers && (
+                        <UsuariosList
+                            consultorio={selectedConsultorioForUsers}
+                            onClose={() => setUsuariosDialogOpen(false)}
+                        />
+                    )}
                 </DialogContent>
             </Dialog>
         </div>
