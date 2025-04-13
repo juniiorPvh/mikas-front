@@ -14,13 +14,14 @@ import { toast } from "sonner";
 import { Consultorio } from "@/app/@types/consultorio";
 import ConsultorioForm from "./components/consultorio-form";
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet";
 import { ConsultorioService } from "../../services/consultorio-service";
 import UsuariosList from "./components/usuarios-list";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function ConsultoriosList() {
     const [consultorios, setConsultorios] = useState<Consultorio[]>([]);
@@ -64,23 +65,26 @@ export default function ConsultoriosList() {
                 </Button>
             </div>
 
-            <Table>
+            <Table className="min-w-full overflow-x-auto">
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>CNPJ</TableHead>
-                        <TableHead>Cidade</TableHead>
-                        <TableHead>Telefone</TableHead>
+                        <TableHead className="hidden md:table-cell">Nome</TableHead>
+                        <TableHead className="hidden md:table-cell">CNPJ</TableHead>
+                        <TableHead className="hidden md:table-cell">Cidade</TableHead>
+                        <TableHead className="hidden md:table-cell">Telefone</TableHead>
                         <TableHead>Ações</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {consultorios.map((consultorio) => (
-                        <TableRow key={consultorio.id}>
-                            <TableCell>{consultorio.nome}</TableCell>
-                            <TableCell>{consultorio.cnpj}</TableCell>
-                            <TableCell>{consultorio.endereco.cidade}</TableCell>
-                            <TableCell>{consultorio.contato.telefone}</TableCell>
+                        <TableRow key={consultorio.id} className="relative">
+                            <TableCell className="md:table-cell">
+                                <div className="md:hidden font-bold mb-1">Nome:</div>
+                                {consultorio.nome}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">{consultorio.cnpj}</TableCell>
+                            <TableCell className="hidden md:table-cell">{consultorio.endereco.cidade}</TableCell>
+                            <TableCell className="hidden md:table-cell">{consultorio.contato.telefone}</TableCell>
                             <TableCell className="flex gap-2">
                                 <Button
                                     variant="outline"
@@ -115,6 +119,24 @@ export default function ConsultoriosList() {
                 </TableBody>
             </Table>
 
+            {/* Update Sheet content for mobile */}
+            <Sheet open={usuariosDialogOpen} onOpenChange={setUsuariosDialogOpen}>
+                <SheetContent 
+                    side="right" 
+                    className="w-full md:w-[1200px] md:max-w-[1200px] overflow-y-auto p-4"
+                >
+                    <SheetHeader>
+                        <SheetTitle>Gerenciar Usuários</SheetTitle>
+                    </SheetHeader>
+                    {selectedConsultorioForUsers && (
+                        <UsuariosList
+                            consultorio={selectedConsultorioForUsers}
+                            onClose={() => setUsuariosDialogOpen(false)}
+                        />
+                    )}
+                </SheetContent>
+            </Sheet>
+
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogContent className="max-w-3xl">
                     <DialogHeader>
@@ -131,19 +153,20 @@ export default function ConsultoriosList() {
                     />
                 </DialogContent>
             </Dialog>
-            <Dialog open={usuariosDialogOpen} onOpenChange={setUsuariosDialogOpen}>
-                <DialogContent className="max-w-4xl">
-                    <DialogHeader>
-                        <DialogTitle>Gerenciar Usuários</DialogTitle>
-                    </DialogHeader>
+            {/* Replace Dialog with Sheet */}
+            <Sheet open={usuariosDialogOpen} onOpenChange={setUsuariosDialogOpen}>
+                <SheetContent side="right" className="w-[1200px] sm:max-w-[1200px] overflow-y-auto p-4">
+                    <SheetHeader>
+                        <SheetTitle>Gerenciar Usuários</SheetTitle>
+                    </SheetHeader>
                     {selectedConsultorioForUsers && (
                         <UsuariosList
                             consultorio={selectedConsultorioForUsers}
                             onClose={() => setUsuariosDialogOpen(false)}
                         />
                     )}
-                </DialogContent>
-            </Dialog>
+                </SheetContent>
+            </Sheet>
         </div>
     );
 }

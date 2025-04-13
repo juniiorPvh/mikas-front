@@ -1,3 +1,4 @@
+import { Consultorio } from '@/app/@types/consultorio';
 import { Usuario } from '@/app/@types/usuario';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -11,7 +12,16 @@ export const UsuarioService = {
         return response.json();
     },
 
+    getAllByIdConsultorio: async (consultorio: Consultorio) => {
+        const response = await fetch(`${API_URL}/usuarios/consultorio/${consultorio.id}`);
+        if (!response.ok) {
+            throw new Error('Falha ao buscar usuários do consultório selecionado');
+        }
+        return response.json();
+    },
+
     create: async (data: Omit<Usuario, 'id'>) => {
+        console.log(`oi`)
         const response = await fetch(`${API_URL}/usuarios`, {
             method: 'POST',
             headers: {

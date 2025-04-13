@@ -4,7 +4,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import Button from "@/components/ui/button/Button";
+import { Button } from "@/components/ui/button";
 import {
     Form,
     FormControl,
@@ -25,16 +25,16 @@ import { toast } from "sonner";
 import { UsuarioService } from "../../../services/usuario-service";
 import { Consultorio } from "@/app/@types/consultorio";
 import { Usuario } from "@/app/@types/usuario";
+import { formatCep, formatCpfCnpj, formatTelefone } from "@/lib/utils";
 
 const usuarioSchema = z.object({
     email: z.string().email("Email inválido"),
     senha: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
-    papel: z.enum(['ADMIN', 'PROFISSIONAL', 'CLIENTE']),
+    papel: z.enum(['ADMIN', 'PROFISSIONAL', 'PACIENTE']),
     pessoa: z.object({
         nome: z.string().min(1, "Nome é obrigatório"),
         cpfCnpj: z.string().min(1, "CPF/CNPJ é obrigatório"),
         dataNascimento: z.string().min(1, "Data de nascimento é obrigatória"),
-        email: z.string().email("Email inválido"),
         endereco: z.object({
             rua: z.string().min(1, "Rua é obrigatória"),
             numero: z.string().min(1, "Número é obrigatório"),
@@ -43,12 +43,12 @@ const usuarioSchema = z.object({
             cidade: z.string().min(1, "Cidade é obrigatória"),
             estado: z.string().min(1, "Estado é obrigatório"),
             cep: z.string().min(1, "CEP é obrigatório"),
-        }),
+        }).optional(),
         contato: z.object({
             telefone: z.string().min(1, "Telefone é obrigatório"),
             email: z.string().email("Email inválido"),
             site: z.string().optional(),
-        }),
+        }).optional(),
     }),
 });
 
@@ -64,35 +64,26 @@ export default function UsuarioForm({ consultorio, usuario, onSuccess }: Usuario
         defaultValues: usuario || {
             email: "",
             senha: "",
-            papel: "CLIENTE",
+            papel: "PACIENTE",
             pessoa: {
                 nome: "",
                 cpfCnpj: "",
                 dataNascimento: "",
-                email: "",
-                endereco: {
-                    rua: "",
-                    numero: "",
-                    complemento: "",
-                    bairro: "",
-                    cidade: "",
-                    estado: "",
-                    cep: "",
-                },
-                contato: {
-                    telefone: "",
-                    email: "",
-                    site: "",
-                },
             },
         },
     });
 
     const onSubmit = async (data: z.infer<typeof usuarioSchema>) => {
+        console.log('Form submitted:', data); // Add this line
         try {
             const userData = {
                 ...data,
                 consultorio,
+                pessoa: {
+                    ...data.pessoa,
+                    endereco: data.pessoa.endereco || undefined,
+                    contato: data.pessoa.contato || undefined,
+                }
             };
 
             if (usuario?.id) {
@@ -104,6 +95,7 @@ export default function UsuarioForm({ consultorio, usuario, onSuccess }: Usuario
             }
             onSuccess();
         } catch (error) {
+            console.error(error);
             toast.error("Falha ao salvar usuário");
         }
     };
@@ -111,7 +103,7 @@ export default function UsuarioForm({ consultorio, usuario, onSuccess }: Usuario
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                     <FormField
                         control={form.control}
                         name="email"
@@ -125,6 +117,8 @@ export default function UsuarioForm({ consultorio, usuario, onSuccess }: Usuario
                             </FormItem>
                         )}
                     />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
                         name="senha"
@@ -144,8 +138,8 @@ export default function UsuarioForm({ consultorio, usuario, onSuccess }: Usuario
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Papel</FormLabel>
-                                <Select 
-                                    onValueChange={field.onChange} 
+                                <Select
+                                    onValueChange={field.onChange}
                                     defaultValue={field.value}
                                 >
                                     <FormControl>
@@ -156,7 +150,7 @@ export default function UsuarioForm({ consultorio, usuario, onSuccess }: Usuario
                                     <SelectContent>
                                         <SelectItem value="ADMIN">Administrador</SelectItem>
                                         <SelectItem value="PROFISSIONAL">Profissional</SelectItem>
-                                        <SelectItem value="CLIENTE">Cliente</SelectItem>
+                                        <SelectItem value="PACIENTE">Paciente</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -167,7 +161,7 @@ export default function UsuarioForm({ consultorio, usuario, onSuccess }: Usuario
 
                 <div className="space-y-4">
                     <h3 className="text-lg font-medium">Dados Pessoais</h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                         <FormField
                             control={form.control}
                             name="pessoa.nome"
@@ -181,6 +175,8 @@ export default function UsuarioForm({ consultorio, usuario, onSuccess }: Usuario
                                 </FormItem>
                             )}
                         />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
                         <FormField
                             control={form.control}
                             name="pessoa.cpfCnpj"
@@ -188,7 +184,14 @@ export default function UsuarioForm({ consultorio, usuario, onSuccess }: Usuario
                                 <FormItem>
                                     <FormLabel>CPF/CNPJ</FormLabel>
                                     <FormControl>
-                                        <Input {...field} />
+                                        <Input
+                                            {...field}
+                                            onChange={(e) => {
+                                                const value = formatCpfCnpj(e.target.value);
+                                                field.onChange(value);
+                                            }}
+                                            maxLength={18}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -207,115 +210,112 @@ export default function UsuarioForm({ consultorio, usuario, onSuccess }: Usuario
                                 </FormItem>
                             )}
                         />
-                        <FormField
-                            control={form.control}
-                            name="pessoa.email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Email Pessoal</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
                     </div>
 
-                    <h3 className="text-lg font-medium mt-6">Endereço</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                            control={form.control}
-                            name="pessoa.endereco.rua"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Rua</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="pessoa.endereco.numero"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Número</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="pessoa.endereco.complemento"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Complemento</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="pessoa.endereco.bairro"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Bairro</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="pessoa.endereco.cidade"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Cidade</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="pessoa.endereco.estado"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Estado</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="pessoa.endereco.cep"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>CEP</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
+                    {usuario && (
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-medium mt-6">Endereço</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="pessoa.endereco.rua"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Rua</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="pessoa.endereco.numero"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Número</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="pessoa.endereco.complemento"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Complemento</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="pessoa.endereco.bairro"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Bairro</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="pessoa.endereco.cidade"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Cidade</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="pessoa.endereco.estado"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Estado</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="pessoa.endereco.cep"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>CEP</FormLabel>
+                                            <FormControl>
+                                                <Input {...field}
+                                                    onChange={(e) => {
+                                                        const value = formatCep(e.target.value);
+                                                        field.onChange(value);
+                                                    }}
+                                                    value={field.value}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        </div>
+                    )}
 
                     <h3 className="text-lg font-medium mt-6">Contato</h3>
                     <div className="grid grid-cols-2 gap-4">
@@ -326,7 +326,12 @@ export default function UsuarioForm({ consultorio, usuario, onSuccess }: Usuario
                                 <FormItem>
                                     <FormLabel>Telefone</FormLabel>
                                     <FormControl>
-                                        <Input {...field} />
+                                        <Input {...field}
+                                            onChange={(e) => {
+                                                const value = formatTelefone(e.target.value);
+                                                field.onChange(value);
+                                            }}
+                                            value={field.value} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -361,9 +366,14 @@ export default function UsuarioForm({ consultorio, usuario, onSuccess }: Usuario
                     </div>
                 </div>
 
-                <Button type="submit">
-                    {usuario ? "Atualizar" : "Criar"} Usuário
-                </Button>
+                <div className="flex justify-end gap-4">
+                    <Button
+                        type="submit"
+                        className="w-full sm:w-auto"
+                    >
+                        {usuario ? "Atualizar" : "Criar"} Usuário
+                    </Button>
+                </div>
             </form>
         </Form>
     );

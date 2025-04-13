@@ -35,7 +35,7 @@ export default function UsuariosList({ consultorio, onClose }: UsuariosListProps
 
     const fetchUsuarios = async () => {
         try {
-            const data = await UsuarioService.getAll();
+            const data = await UsuarioService.getAllByIdConsultorio(consultorio);
             const usuariosDoConsultorio = data.filter(
                 (usuario: Usuario) => usuario.consultorio.id === consultorio.id
             );
@@ -61,40 +61,91 @@ export default function UsuariosList({ consultorio, onClose }: UsuariosListProps
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
                 <h2 className="text-xl font-semibold">
                     Usuários - {consultorio.nome}
                 </h2>
-                <div className="space-x-2">
-                    <Button onClick={() => {
-                        setSelectedUsuario(null);
-                        setOpen(true);
-                    }}>
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <Button 
+                        className="flex-1 sm:flex-none"
+                        onClick={() => {
+                            setSelectedUsuario(null);
+                            setOpen(true);
+                        }}
+                    >
                         <Plus className="mr-2 h-4 w-4" /> Novo Usuário
                     </Button>
-                    <Button variant="outline" onClick={onClose}>
+                    <Button 
+                        variant="outline" 
+                        onClick={onClose}
+                        className="flex-1 sm:flex-none"
+                    >
                         Fechar
                     </Button>
                 </div>
             </div>
 
-            <Table>
+            <div className="grid grid-cols-1 gap-4 md:hidden">
+                {usuarios.map((usuario) => (
+                    <div key={usuario.id} className="border-b pb-4">
+                        <div className="flex flex-col gap-2">
+                            <div className="flex justify-between items-center">
+                                <h3 className="font-medium">{usuario.pessoa.nome}</h3>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => {
+                                            setSelectedUsuario(usuario);
+                                            setOpen(true);
+                                        }}
+                                    >
+                                        <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="text-destructive"
+                                        onClick={() => usuario.id && handleDelete(usuario.id)}
+                                    >
+                                        <Trash className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                            <div className="flex justify-between items-center text-sm text-muted-foreground">
+                                <span>{usuario.papel}</span>
+                                <span>{usuario.pessoa.cpfCnpj}</span>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <Table className="hidden md:table">
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Papel</TableHead>
-                        <TableHead>CPF/CNPJ</TableHead>
+                        <TableHead className="hidden md:table-cell">Nome</TableHead>
+                        <TableHead className="hidden md:table-cell">Email</TableHead>
+                        <TableHead className="hidden md:table-cell">Papel</TableHead>
+                        <TableHead className="hidden md:table-cell">CPF/CNPJ</TableHead>
                         <TableHead>Ações</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {usuarios.map((usuario) => (
                         <TableRow key={usuario.id}>
-                            <TableCell>{usuario.pessoa.nome}</TableCell>
-                            <TableCell>{usuario.email}</TableCell>
-                            <TableCell>{usuario.papel}</TableCell>
-                            <TableCell>{usuario.pessoa.cpfCnpj}</TableCell>
+                            <TableCell>
+                                <div className="md:hidden space-y-1">
+                                    <div className="font-bold">{usuario.pessoa.nome}</div>
+                                    <div>{usuario.email}</div>
+                                    <div>{usuario.papel}</div>
+                                    <div>{usuario.pessoa.cpfCnpj}</div>
+                                </div>
+                                <span className="hidden md:block">{usuario.pessoa.nome}</span>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">{usuario.email}</TableCell>
+                            <TableCell className="hidden md:table-cell">{usuario.papel}</TableCell>
+                            <TableCell className="hidden md:table-cell">{usuario.pessoa.cpfCnpj}</TableCell>
                             <TableCell className="flex gap-2">
                                 <Button
                                     variant="outline"
@@ -120,7 +171,7 @@ export default function UsuariosList({ consultorio, onClose }: UsuariosListProps
             </Table>
 
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="max-w-3xl">
+                <DialogContent className="w-full max-w-3xl">
                     <DialogHeader>
                         <DialogTitle>
                             {selectedUsuario ? 'Editar Usuário' : 'Novo Usuário'}
@@ -128,7 +179,7 @@ export default function UsuariosList({ consultorio, onClose }: UsuariosListProps
                     </DialogHeader>
                     <UsuarioForm
                         consultorio={consultorio}
-                        usuario={selectedUsuario}
+                        usuario={selectedUsuario || undefined}
                         onSuccess={() => {
                             setOpen(false);
                             fetchUsuarios();

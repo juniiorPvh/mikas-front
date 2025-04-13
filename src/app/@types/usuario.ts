@@ -4,15 +4,14 @@ export interface Usuario {
     id?: number;
     email: string;
     senha: string;
-    papel: 'ADMIN' | 'PROFISSIONAL' | 'CLIENTE';
+    papel: 'ADMIN' | 'PROFISSIONAL' | 'PACIENTE';
     consultorio: Consultorio;
     pessoa: {
         id?: number;
         nome: string;
         cpfCnpj: string;
         dataNascimento: string;
-        email: string;
-        endereco: {
+        endereco?: {
             rua: string;
             numero: string;
             complemento?: string;
@@ -21,9 +20,9 @@ export interface Usuario {
             estado: string;
             cep: string;
         };
-        contato: {
+        contato?: {
             telefone: string;
-            email: string;
+            email?: string;
             site?: string;
         };
     };
